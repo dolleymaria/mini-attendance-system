@@ -12,7 +12,7 @@ const createEmployee = async (req, res) => {
       designation,
       status = "ACTIVE",
     } = req.body;
-
+  const normalizedDepartment = department?.trim();
     // Basic validation
     if (
       !employee_id ||
@@ -26,7 +26,21 @@ const createEmployee = async (req, res) => {
         message: "All employee fields are required",
       });
     }
+const departmentResult = await pool.query(
+  `SELECT department
+   FROM employees
+   WHERE LOWER(TRIM(department)) = LOWER($1)
+   LIMIT 1`,
+  [normalizedDepartment]
+);
+console.log("Department input:", department);
+console.log("Normalized department:", normalizedDepartment);
+console.log("Existing department:", departmentResult.rows[0]?.department);
 
+const finalDepartment =
+  departmentResult.rows.length > 0
+    ? departmentResult.rows[0].department
+    : normalizedDepartment;
     const result = await pool.query(
       `INSERT INTO employees
       (
@@ -45,7 +59,7 @@ const createEmployee = async (req, res) => {
         employee_name,
         email,
         mobile_number,
-        department,
+        finalDepartment,
         designation,
         status,
       ]
@@ -79,7 +93,7 @@ const getEmployees = async (req, res) => {
       department,
       status,
       page = 1,
-      limit = 10,
+      limit = 5,
       sortBy = "created_at",
       order = "ASC",
     } = req.query;
